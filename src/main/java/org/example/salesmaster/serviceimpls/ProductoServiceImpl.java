@@ -6,18 +6,16 @@ import org.example.salesmaster.exceptions.ResourceNotFoundException;
 import org.example.salesmaster.mappers.ProductoMapper;
 import org.example.salesmaster.repositories.ProductoRepository;
 import org.example.salesmaster.services.ProductoService;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ProductoServiceImpl implements ProductoService {
-    @Autowired
-    private ProductoRepository productoRepository;
+    private final ProductoRepository productoRepository;
 
     @Override
     public ProductoDTO createProducto(ProductoDTO productoDTO) {

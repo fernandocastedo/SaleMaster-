@@ -10,6 +10,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.http.HttpMethod;
 
 /**
  * SecurityConfig
@@ -26,13 +29,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final CorsConfigurationSource corsConfigurationSource;
+    private final CorsFilter corsFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 // ✅ Habilitar CORS global (configurado en CorsConfig)
-                .cors(cors -> cors.configure(http))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 // ❌ Desactivar CSRF (no se usa con JWT)
                 .csrf(AbstractHttpConfigurer::disable)
                 // ✅ Definir rutas públicas y protegidas
@@ -48,6 +53,8 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
+                        // Permitir peticiones OPTIONS (preflight de CORS)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -57,6 +64,8 @@ public class SecurityConfig {
                 )
                 // ✅ Registrar el AuthenticationProvider
                 .authenticationProvider(authenticationProvider)
+                // ✅ Registrar el filtro CORS antes del filtro JWT (orden importante)
+                .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
                 // ✅ Registrar el filtro JWT antes del UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

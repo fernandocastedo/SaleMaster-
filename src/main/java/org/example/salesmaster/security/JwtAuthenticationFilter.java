@@ -38,6 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // ✅ Permitir peticiones OPTIONS (preflight de CORS) sin procesar
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String jwt;
         final String username;
@@ -51,25 +57,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 🧾 Extraer el token JWT (sin la palabra "Bearer ")
         jwt = authHeader.substring(7);
 
-        // 👤 Extraer usuario desde el token
-        username = jwtService.extractUsername(jwt);
+        try {
+            // 👤 Extraer usuario desde el token
+            username = jwtService.extractUsername(jwt);
 
-        // 🔐 Validar token si aún no hay autenticación en contexto
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            // 🔐 Validar token si aún no hay autenticación en contexto
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // ✅ Validar correctamente con el objeto UserDetails
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                // ✅ Validar correctamente con el objeto UserDetails
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // ❌ Token inválido o expirado - continuar sin autenticación
+            // El SecurityFilterChain se encargará de rechazar la petición si es necesario
+            logger.error("Error al procesar token JWT: " + e.getMessage());
         }
 
         // 🚀 Continuar con la cadena de filtros
