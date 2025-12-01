@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: salesmaster
+    env: java
+    buildCommand: chmod +x ./mvnw && ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: PORT
+        fromService:
+          type: web
+          name: salesmaster
+          property: port
+
