@@ -1,0 +1,9 @@
+target/
+.idea/
+.git/
+*.iml
+.env
+*.jar
+!mvnw
+node_modules/
+

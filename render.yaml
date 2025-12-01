@@ -1,9 +1,7 @@
 services:
   - type: web
     name: salesmaster
-    env: java
-    buildCommand: chmod +x ./mvnw && ./mvnw clean package -DskipTests
-    startCommand: java -jar target/*.jar
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         fromService:
